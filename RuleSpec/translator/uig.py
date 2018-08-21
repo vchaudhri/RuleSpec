@@ -44,7 +44,7 @@ def write_library (f,rule_library) :
     f.write(library_footer)
 
 def output_worksheet(constants,inputs,outputs,rule_library):
-    ws = r'C:\Users\Chaudhri\Desktop\worksheet.html'
+    ws = r'worksheet.html'
     with open(ws, 'w+') as f:
         f.write(header)
         write_library(f,rule_library)
