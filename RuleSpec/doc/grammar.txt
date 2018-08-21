@@ -1,0 +1,26 @@
+
+<statements> := <statement> <statement> ... <statement>
+<statement> :=  <equality> | <conditional>
+<equality> := <lhs> = <rhs>
+<lhs> := <constant>
+<rhs> := <expression> | <number>
+<constant> := <constant-name> | <constant-array-name> | <number>
+<constant-array-name> :=   <consant-name> ( <number> )
+<expression> :=  <operand> <operator> <operand> 
+<operator> :=   + | - | * | / | div | mod
+<operand>  := <constant>  | <parenthetical-expression>
+<parenthetical-expression> := ( <expression> )
+<IF-Then-Else-Conditional>  :=  If <condition> Then [<statements> | <If-Then-Else-Conditional> [Else [<statements> | <If-Then-Else-Conditional>] Endif
+<condition> :=  <literal> | ( <condition> <logical-connective> <condition> )
+<logical-connective> := and | or
+<literal> := <atomic-formula> | <negated-atomic-formula>
+<negated-atomic-formula> := not <atomic-formula>
+<atomic-formula> := ( <constant> <comparison-operator> <constant> ) | ( <constant> )
+<comparison-operator> := < | <= | > | >=
+
+
+
+
+
+
+
