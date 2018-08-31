@@ -1,26 +1,40 @@
 
-<statements> := <statement> <statement> ... <statement>
-<statement> :=  <equality> | <conditional>
-<equality> := <lhs> = <rhs>
-<lhs> := <constant>
-<rhs> := <expression> | <number>
-<constant> := <constant-name> | <constant-array-name> | <number>
-<constant-array-name> :=   <consant-name> ( <number> )
-<expression> :=  <operand> <operator> <operand> 
-<operator> :=   + | - | * | / | div | mod
-<operand>  := <constant>  | <parenthetical-expression>
-<parenthetical-expression> := ( <expression> )
-<IF-Then-Else-Conditional>  :=  If <condition> Then [<statements> | <If-Then-Else-Conditional> [Else [<statements> | <If-Then-Else-Conditional>] Endif
-<condition> :=  <literal> | ( <condition> <logical-connective> <condition> )
-<logical-connective> := and | or
-<literal> := <atomic-formula> | <negated-atomic-formula>
-<negated-atomic-formula> := not <atomic-formula>
-<atomic-formula> := ( <constant> <comparison-operator> <constant> ) | ( <constant> )
-<comparison-operator> := < | <= | > | >=
+
+       STATEMENTS : STATEMENT
+                  | STATEMENT STATEMENTS   
+
+       STATEMENT : EQUALITY
+                 | IF_THEN_ELSE   
+		 
+       EQUALITY : CONSTANT EQUALS EXPRESSION
+                | CONSTANT EQUALS STRING   
+
+       EXPRESSION : CONSTANT
+                  | NUMBER
+                  | EXPRESSION PLUS EXPRESSION
+                  | EXPRESSION MINUS EXPRESSION
+                  | EXPRESSION TIMES EXPRESSION
+                  | EXPRESSION DIVIDE EXPRESSION
+                  | EXPRESSION MOD EXPRESSION
+                  | EXPRESSION DIV EXPRESSION
+                  | LPAREN EXPRESSION RPAREN    
 
 
+       IF_THEN_ELSE : IF CONDITION THEN STATEMENTS ENDIF
+                    | IF CONDITION THEN STATEMENTS ELSE STATEMENTS ENDIF   
 
 
+       CONDITION : LITERAL
+                 | CONDITION AND CONDITION
+                 | CONDITION OR CONDITION
+                 | LPAREN CONDITION AND CONDITION RPAREN
+                 | LPAREN CONDITION OR CONDITION RPAREN   
 
 
+       LITERAL : ATOMIC_FORMULA
+               | NOT ATOMIC_FORMULA   
 
+       ATOMIC_FORMULA : LPAREN CONSTANT RPAREN
+                      | LPAREN CONSTANT COMPARISON_OPERATOR NUMBER RPAREN
+                      | LPAREN CONSTANT COMPARISON_OPERATOR STRING RPAREN
+                      | LPAREN CONSTANT COMPARISON_OPERATOR CONSTANT RPAREN   

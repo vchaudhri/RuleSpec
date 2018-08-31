@@ -1,62 +1,190 @@
 import re
+import lex
+import yacc
 import uig
-from pathlib import Path
+import os.path
 
-rule_spec = dict()
-rule_spec[1] = "C[1]=50"
-rule_spec[2] = 'P[n]=P[nm1]+p[n]'
-rule_spec[3] = 'a1=(5000 / 52 * (code - 1) D 500) + ((((code - 1) M 500 + 1) * 10 + 9) / 52)'
-rule_spec[4] = "if (code = 0) " \
-               "a1 = 0       " \
-               "else  " \
-               "a1  = (5000 /52 * (code-1) div 500) + " \
-               "(((code-1) mod 500 + 1) * 10 + 9) / 52 " \
-               "endif"
+reserved = {
+            'if':    'IF',
+            'then':  'THEN',
+            'else':  'ELSE',
+            'endif': 'ENDIF',
+            'or':   'OR',
+            'and':  'AND',
+            'not':  'NOT',
+            'mod': 'MOD',
+            'div': 'DIV'
+    }
 
-epilog_operator = {'+': 'plus', '-': 'subtract', '*': 'times', '/': 'quotient', 'M': 'mod', 'D': 'div'}
+tokens = ['PLUS', 'MINUS', 'DIVIDE', 'TIMES', 'NUMBER', 'STRING', 'CONSTANT', 'COMPARISON_OPERATOR',
+          'EQUALS', 'LPAREN', 'RPAREN'] + list(reserved.values())
 
-def greater_precedence(op1, op2):
-    precedences = {'+': 0, '-': 0, '*': 1, '/': 1, 'D': 2, 'M': 2}
-    return precedences[op1] >= precedences[op2]
-
-global constants
-global inputs
-global outputs
-global rule_library
-
-constants = []
-inputs = []
-outputs = []
-rule_library = ""
-
-global var_counter
-var_counter = 0
+t_PLUS = '\+'
+t_MINUS = '-'
+t_DIVIDE = '/'
+t_TIMES = '\*'
+t_COMPARISON_OPERATOR = '<=|>=|<>|>|<|=='
+t_EQUALS = '='
+t_LPAREN = '\('
+t_RPAREN = '\)'
+t_ignore = ' \t\n'
 
 
-def get_variable():
-    global var_counter
-    var_counter += 1
-    return 'X' + str(var_counter)
+def t_COMMENT(t):
+    """\#.*"""
+    pass
 
 
-def peek(stack):
-    return stack[-1] if stack else None
+def t_NUMBER(t):
+    """[-+]?[0-9]*\.?[0-9]+"""
+    return t
 
 
-def apply_operator(operator_stack, output_queue, output_string, symbol_table):
-    if (output_string != ""):
-        output_string += "  &amp; "
-    output_string += ' ' + epilog_operator[operator_stack.pop()] + '('
-    operand2 = output_queue.pop()
-    operand1 = output_queue.pop()
-    result_variable = get_variable()
-    output_string += operand1 + ","
-    output_string += operand2 + ',' + str(result_variable) + ')'
-    output_queue.append(result_variable)
-    return output_string
+def t_STRING(t):
+    """\'[A-Za-z0-9][A-Za-z0-9_]*\'"""
+    return t
 
 
+def t_CONSTANT(t):
+    """[A-Za-z][A-Za-z0-9]*\[[a-zA-z0-9]*\]|((?:[A-Za-z][A-Za-z0-9_]*))"""
+    t.type = reserved.get(t.value, 'CONSTANT')
+    return t
 
+
+def t_error(t):
+    print("illegal character {}".format(t))
+    print("Illegal character '%s'" % t.value[0])
+    t.lexer.skip(1)
+
+
+precedence = (
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'TIMES', 'DIVIDE', 'MOD', 'DIV'),
+)
+
+
+lexer = lex.lex()
+
+
+class Node:
+    def __init__(self, type, children=None, leaf=None):
+        self.type = type
+        if children:
+            self.children = children
+        else:
+            self.children = []
+        self.leaf = leaf
+
+
+def p_statements(p):
+    """STATEMENTS : STATEMENT
+                  | STATEMENT STATEMENTS"""
+    statements = []
+    for i in range(1, len(p)):
+        statements.append(p[i])
+    p[0] = Node("statements", statements)
+
+
+def p_statement(p):
+    """STATEMENT : EQUALITY
+                 | IF_THEN_ELSE"""
+    p[0] = p[1]
+
+
+def p_equality(p):
+    """EQUALITY : CONSTANT EQUALS EXPRESSION
+                | CONSTANT EQUALS STRING"""
+    p[0] = Node("equality", [p[1], p[3]], p[2])
+
+
+def p_expression(p):
+    """EXPRESSION : CONSTANT
+                  | NUMBER
+                  | EXPRESSION PLUS EXPRESSION
+                  | EXPRESSION MINUS EXPRESSION
+                  | EXPRESSION TIMES EXPRESSION
+                  | EXPRESSION DIVIDE EXPRESSION
+                  | EXPRESSION MOD EXPRESSION
+                  | EXPRESSION DIV EXPRESSION
+                  | LPAREN EXPRESSION RPAREN """
+    if len(p) == 2:
+        p[0] = p[1]
+    elif len(p) == 4 and p[1] == '(':
+        p[0] = Node("expression", [p[2]])
+    else:
+        p[0] = Node("expression", [p[1], p[3]], p[2])
+
+
+def p_IF_THEN_ELSE(p):
+    """IF_THEN_ELSE : IF CONDITION THEN STATEMENTS ENDIF
+                    | IF CONDITION THEN STATEMENTS ELSE STATEMENTS ENDIF"""
+    if len(p) == 6:
+        p[0] = Node("if_then_else", [p[2], p[4]], [p[1], p[3], p[5]])
+    elif len(p) == 8:
+        p[0] = Node("if_then_else", [p[2], p[4], p[6]], [p[3], p[5], p[7]])
+
+
+def p_condition(p):
+    """CONDITION : LITERAL
+                 | CONDITION AND CONDITION
+                 | CONDITION OR CONDITION
+                 | LPAREN CONDITION AND CONDITION RPAREN
+                 | LPAREN CONDITION OR CONDITION RPAREN"""
+    if p[1] == '(':
+        i = 2
+    else:
+        i = 1
+    literals = [p[i]]
+    leafs = []
+    if len(p[i:]) >= 3:
+        if p[i+1] == 'or':
+            leafs.append('or')
+        else:
+            leafs.append('and')
+        literals.append(p[i+2])
+    p[0] = Node("condition", literals, leafs)
+
+
+def p_literal(p):
+    """LITERAL : ATOMIC_FORMULA
+               | NOT ATOMIC_FORMULA"""
+    if len(p) == 2:
+        p[0] = Node("literal", [p[1]])
+    elif len(p) == 3:
+        p[0] = Node("literal", [p[1]], p[2])
+
+
+def p_atomic_formula(p):
+    """ATOMIC_FORMULA : LPAREN CONSTANT RPAREN
+                      | LPAREN CONSTANT COMPARISON_OPERATOR NUMBER RPAREN
+                      | LPAREN CONSTANT COMPARISON_OPERATOR STRING RPAREN
+                      | LPAREN CONSTANT COMPARISON_OPERATOR CONSTANT RPAREN"""
+    if len(p) == 4:
+        p[0] = Node("atomic_formula", [p[2]])
+    elif len(p) == 6:
+        p[0] = Node("atomic_formula", [p[2], p[4]], p[3])
+
+
+def p_error(p):
+    print(p)
+    print("Syntax error in input!")
+
+
+parser = yacc.yacc()
+
+
+def print_ast(node):
+    print("AST Node: {} {}".format(node, node.type))
+    print("   Children:")
+    for child in node.children:
+        if isinstance(child, Node):
+            print("      {} {}".format(child, child.type))
+        else:
+            print("      {} ".format(child))
+    print("   Leaf    :  {}".format(node.leaf))
+    for child in node.children:
+        if type(child) is Node:
+            print_ast(child)
 
 
 def ensure_constant(name):
@@ -67,75 +195,303 @@ def ensure_constant(name):
     return name
 
 
-def parse_expression(expression, symbol_table):
+global inputs, outputs, symbol_table
+inputs = []
+outputs = []
+
+
+def print_ui():
+    global inputs, outputs
+    print("inputs={}".format(inputs))
+    print("outputs={}".format(outputs))
+
+
+def ast2epilog(ast):
+    global inputs, outputs, symbol_table
+    symbol_table = {}
+    if ast.type == "statements":
+        output = ''
+        for statement in ast.children:
+            output += '\n\n\n' + ast2epilog(statement)
+        return output
+    elif ast.type == "if_then_else":
+        return translate_if_then_else(ast, [], [])
+    elif ast.type == "equality":
+        return translate_equality_ast(ast)
+    else:
+        print("Unrecognized AST Type")
+
+
+global var_counter
+
+
+var_counter = 0
+
+
+def get_variable(constant=None):
+    global var_counter, symbol_table
+    if constant in symbol_table:
+        return symbol_table[constant]
+    elif constant:
+        var_counter += 1
+        symbol_table[constant] = 'X' + str(var_counter)
+        return symbol_table[constant]
+    else:
+        var_counter += 1
+        return 'X' + str(var_counter)
+
+
+def get_operand(child):
     global inputs
-    tokens = re.findall("\(|\)|=|\+|-|\*|/|D|[a-z|A-Z|0-9|\[|\]]*", expression)
-    tokens = list(filter(None, tokens))
-    output_string = ""
-    output_queue = []
-    operator_stack = []
-    for token in tokens:
-        if token.isnumeric():
-            output_queue.append(token)
-        elif token == '(':
-            operator_stack.append(token)
-        elif token == ')':
-            top = peek(operator_stack)
-            while top is not None and top != '(':
-                output_string = apply_operator(operator_stack, output_queue, output_string, symbol_table)
-                top = peek(operator_stack)
-            operator_stack.pop()  # Discard the '('
-        elif token in '+-/*MD':
-            # Operator
-            top = peek(operator_stack)
-            while top is not None and top not in "()" and greater_precedence(top, token):
-                output_string = apply_operator(operator_stack, output_queue, output_string, symbol_table)
-                top = peek(operator_stack)
-            operator_stack.append(token)
-        elif token in symbol_table:  # Constant
-            output_queue.append(symbol_table[token])
+    if isinstance(child, Node) and child.type == 'expression':
+        operand, output_string = translate_expression(child)
+    elif child.isnumeric():
+        operand = child
+        output_string = ''
+    else:
+        child_constant = ensure_constant(child)
+        if child_constant not in inputs:
+            inputs.append(child_constant)
+        operand = get_variable(child_constant)
+        output_string = 'value(' + child_constant + ',' + operand + ')'
+    return operand, output_string
+
+
+epilog_operator = {'+': 'plus', '-': 'subtract', '*': 'times', '/': 'quotient', 'mod': 'mod', 'div': 'div'}
+
+
+epilog_comparator = {'>': 'greater_than', '<': 'less_than', '>=': 'greater_than_equal_to',
+                     '<=': 'less_than_equal_to', '==': 'equal', '<>': 'different'}
+
+
+def translate_expression(expression):
+    if isinstance(expression, str):
+        expression_constant = ensure_constant(expression)
+        if expression_constant not in inputs:
+            inputs.append(expression_constant)
+        output_variable = get_variable(expression_constant)
+        output_string = 'value(' + expression_constant + ',' + output_variable + ')'
+        return output_variable, output_string
+    elif expression.leaf is None:
+        return translate_expression(expression.children[0])
+    else:
+        operator = expression.leaf
+        operand1, output_string1 = get_operand(expression.children[0])
+        operand2, output_string2 = get_operand(expression.children[1])
+        output_variable = get_variable()
+        output_string = write_output(output_string1, output_string2, ' & ')
+        output_string3 = epilog_operator[operator] + '(' + operand1 + ',' + operand2 + ',' + output_variable + ')'
+        output_string = write_output(output_string, output_string3, ' & ')
+    return output_variable, output_string
+
+
+def translate_equality(ast):
+    if isinstance(ast.children[1], str) and (is_number(ast.children[1]) or is_string(ast.children[1])):
+        return translate_equality_assignment(ast)
+    else:
+        return translate_equality_expression(ast)
+
+
+def translate_equality_ast(ast):
+    antecedent, consequent = translate_equality(ast)
+    if antecedent:
+        return consequent + ' :- ' + antecedent
+    else:
+        return consequent
+
+
+def translate_equality_assignment(ast):
+    global outputs
+    child_constant = ensure_constant(ast.children[0])
+    if child_constant not in inputs:
+        outputs.append(child_constant)
+    return '', 'value(' + child_constant + ',' + ast.children[1] + ')'
+
+
+def translate_equality_expression(ast):
+    global outputs
+    output_variable, output_string = translate_expression(ast.children[1])
+    child_constant0 = ensure_constant(ast.children[0])
+    if child_constant0 not in outputs:
+        outputs.append(child_constant0)
+    return output_string, 'value(' + child_constant0 + ',' + output_variable + ')'
+
+
+def translate_atomic_formula_1(atomic_formula):
+    global inputs
+    if len(atomic_formula.children) == 1 and not isinstance(atomic_formula.children[0], str):
+        return translate_atomic_formula(atomic_formula.children[0])
+    child_constant0 = ensure_constant(atomic_formula.children[0])
+    if child_constant0 not in inputs:
+        inputs.append(child_constant0)
+    if len(atomic_formula.children) == 1:
+        output_string = 'value(' + child_constant0 + ',' + 'true' + ')'
+        return output_string
+    elif len(atomic_formula.children) == 2:
+        output_string = ''
+        variable0 = get_variable(child_constant0)
+        output_string += 'value(' + child_constant0 + ',' + variable0 + ')'
+        if isinstance(atomic_formula.children[1], str) and not atomic_formula.children[1].isnumeric():
+            child_constant1 = ensure_constant(atomic_formula.children[1])
+            variable1 = get_variable(child_constant1)
+            output_string += ' & ' + 'value(' + child_constant1 + ',' + variable1 + ')'
+            if child_constant1 not in inputs:
+                inputs.append(child_constant1)
+            output_string += ' & ' + epilog_comparator[atomic_formula.leaf] + '(' + variable0 + ',' + variable1 + ')'
+            return output_string
         else:
-            symbol_table[token] = get_variable()
-            output_queue.append(symbol_table[token])
-            inputs.append(ensure_constant(token))
-            if (output_string != ""):
-                output_string += "  &amp; "
-            output_string += 'value({},{})'.format(ensure_constant(token), symbol_table[token])
-    while peek(operator_stack) is not None:
-        output_string = apply_operator(operator_stack, output_queue, output_string, symbol_table)
+            return output_string + ' & ' + epilog_comparator[atomic_formula.leaf] + '(' + variable0 + ',' + \
+                   ensure_constant(atomic_formula.children[1]) + ')'
+
+
+def is_string(s):
+    if isinstance(s, str) and s[0] == '\'' and s[len(s) - 1] == '\'':
+        return True
+    else:
+        return False
+
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def translate_atomic_formula(atomic_formula):
+    global inputs
+    child_constant0 = ensure_constant(atomic_formula.children[0])
+    if child_constant0 not in inputs:
+        inputs.append(child_constant0)
+    if len(atomic_formula.children) == 1:
+        output_string = 'value(' + child_constant0 + ',' + 'true' + ')'
+        return output_string
+    elif len(atomic_formula.children) == 2:
+        output_string = ''
+        if isinstance(atomic_formula.children[1], str):
+            variable0 = get_variable(child_constant0)
+            output_string += 'value(' + child_constant0 + ',' + variable0 + ')'
+            if is_number(atomic_formula.children[1]) or is_string(atomic_formula.children[1]):
+                output_string += ' & ' + epilog_comparator[atomic_formula.leaf] + '(' + variable0 + ',' + \
+                       atomic_formula.children[1] + ')'
+                return output_string
+            else:
+                child_constant1 = ensure_constant(atomic_formula.children[1])
+                variable1 = get_variable(child_constant1)
+                output_string += ' & ' + 'value(' + child_constant1 + ',' + variable1 + ')'
+                if child_constant1 not in inputs:
+                    inputs.append(child_constant1)
+                output_string += ' & ' + epilog_comparator[atomic_formula.leaf] + \
+                                 '(' + variable0 + ',' + variable1 + ')'
+                return output_string
+
+
+def translate_literal(literal):
+    if literal.leaf == 'not':
+        return 'not ' + translate_atomic_formula(literal.children[0])
+    else:
+        output_string = translate_atomic_formula(literal.children[0])
+        return output_string
+
+
+def logical_connector(connector):
+    if connector == 'and':
+        return ' & '
+    else:
+        return ' | '
+
+
+def translate_condition(condition):
+    if len(condition.children) == 1:
+        output_string = translate_literal(condition.children[0])
+        return output_string
+    else:
+        if condition.type == 'literal':
+            output_string = translate_literal(condition.children[0])
+        else:
+            output_string = translate_condition(condition.children[0])
+        output_string += logical_connector(condition.leaf[0]) + translate_condition(condition.children[1])
+        return output_string
+
+
+def translate_if_then_else_branch(statement, positive_conditions, negative_conditions):
+    output_string = ''
+    antecedent = ''
+    if positive_conditions:
+        for condition in positive_conditions:
+            antecedent = write_output(antecedent, translate_condition(condition), ' & ')
+    equality_antecedent, equality_consequent = translate_equality(statement)
+    if len(negative_conditions) >= 1:
+        negated_antecedent = ''
+        for condition in negative_conditions:
+            negated_antecedent =  \
+                 write_output(negated_antecedent, 'not (' + translate_condition(condition) + ')', ' & ')
+        antecedent = write_output(negated_antecedent, antecedent, ' & ')
+    output_string += equality_consequent + ' :- ' + antecedent
+    if equality_antecedent:
+        output_string += ' & ' + equality_antecedent
+    output_string += ' \n'
     return output_string
 
 
-def parse_equality_expression(operand1, operand2):
-    global outputs
-    global rule_library
-    symbol_table = {}
-    parsed_expression = parse_expression(operand2, symbol_table)
-    outputs.append(ensure_constant(operand1))
-    print("value({},{}) :- {}".format(operand1, 'X' + str(var_counter), parsed_expression))
-    rule_library += "value({0},X{1}) :- {2}\n".format(ensure_constant(operand1), str(var_counter),
-                                                      parsed_expression)
+def flatten_statements(statements):
+    statement_tree = []
+    for statement in statements.children:
+        if statement.type == "statements":
+            statement_tree.extend(flatten_statements(statement))
+        elif statement.type == "equality" or statement.type == "if_then_else":
+            statement_tree.append(statement)
+        else:
+            print("error found in statements")
+    return statement_tree
 
 
-def parse_equality(expression):
-    global rule_library
-    operand1 = expression[0:re.search("=", expression).start()]
-    operand2 = expression[re.search("=", expression).end():]
-    if operand2.isnumeric():
-        print("value({},{})".format(ensure_constant(operand1), operand2))
-        constants.append(ensure_constant(operand1))
-        rule_library += "value(" + ensure_constant(operand1) + ',' + operand2 + ')' + '\n'
-    else:
-        parse_equality_expression(operand1, operand2)
+def translate_if_then_else(ast, positive_conditions, negative_conditions):
+    output_string = ''
+    positive_conditions.append(ast.children[0])
+    for statement in flatten_statements(ast.children[1]):
+        if statement.type == "if_then_else":
+            sub_output_string = translate_if_then_else(statement, positive_conditions, negative_conditions)
+            output_string += sub_output_string
+        else:
+            sub_output_string = translate_if_then_else_branch(statement, positive_conditions, negative_conditions)
+            output_string += sub_output_string
+    positive_conditions.remove(ast.children[0])
+    if len(ast.children) > 2:
+        negative_conditions.append(ast.children[0])
+        for statement in flatten_statements(ast.children[2]):
+            if statement.type == "if_then_else":
+                sub_output_string = translate_if_then_else(statement, positive_conditions, negative_conditions)
+                output_string += sub_output_string
+            else:
+                sub_output_string = \
+                    translate_if_then_else_branch(statement, positive_conditions, negative_conditions)
+                output_string += sub_output_string
+    return output_string
+
+
+def write_output(output_string, input_string, connective):
+    if output_string == '':
+        output_string = input_string
+    elif input_string != '':
+        output_string = output_string + connective + input_string
+    return output_string
+
 
 def main():
-    global constants, inputs, outputs, rule_library
-    for i in range(1, 4):
-        print("\n\nInput: \n{} \nOutput:".format(rule_spec[i]))
-        parse_equality(rule_spec[i])
-        print("\n constants: {} \n inputs: {} \n outputs: {} \n rule library: {} \n". \
-              format(constants, inputs, outputs, rule_library))
-        uig.output_worksheet(constants,inputs,outputs,rule_library)
+    rule_library = ''
+    input_file = os.path.join('..', 'rules', 'tax_calc.rs')
+    with open(input_file, 'r') as f:
+        input_rules = f.read()
+    lexer.input(input_rules)
+    parse_output = parser.parse(input_rules, lexer=lexer)
+    translation_output = ast2epilog(parse_output)
+    rule_library += translation_output
+    print(translation_output)
+    global inputs, outputs
+    rule_library += translation_output
+    uig.output_worksheet(inputs, outputs, rule_library)
 
 
 if __name__ == "__main__":

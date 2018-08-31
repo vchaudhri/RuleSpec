@@ -43,18 +43,13 @@ def write_library (f,rule_library) :
     f.write(rule_library)
     f.write(library_footer)
 
-def output_worksheet(constants,inputs,outputs,rule_library):
+def output_worksheet(inputs,outputs,rule_library):
     ws = r'worksheet.html'
     with open(ws, 'w+') as f:
         f.write(header)
         write_library(f,rule_library)
-        if constants != []:
-            for constant in constants:
-                write_constant(f,constant)
         if inputs != []:
             for input in inputs:
-
-
                 accept_input(f,input)
         if outputs != []:
             for output in outputs:
