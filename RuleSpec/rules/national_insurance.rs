@@ -89,9 +89,9 @@ if (employment_status == 'self_employed') and (employment_title == 'Landlord') t
       R2 = 0.09
       R3 = 0.02
       if (annual_profit < 8424) then
-        national_insurance_class = class2
+        national_insurance_class = 'class2'
       else
-        national_insurance_class = class4
+        national_insurance_class = 'class4'
       endif
    endif
 endif
@@ -101,10 +101,10 @@ if (employment_status == 'self_employed') and (employment_title <> 'Landlord') a
        R1 = 0
        R2 = 0
    else if (annual_profit < 8424) then
-    national_insurance_class = class2
+    national_insurance_class = 'class2'
     WR1 = 2.95
   else if (annual_profit > 8424) then
-    national_insurance_class = class4
+    national_insurance_class = 'class4'
     WR1 = 2.95
     R2 = 0.09
     R3 = 0.02
