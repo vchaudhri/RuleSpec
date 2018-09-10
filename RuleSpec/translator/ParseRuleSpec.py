@@ -288,7 +288,7 @@ epilog_operator = {'+': 'plus', '-': 'subtract', '*': 'times', '/': 'quotient', 
 
 
 epilog_comparator = {'>': 'greater_than', '<': 'less_than', '>=': 'greater_than_equal_to',
-                     '<=': 'less_than_equal_to', '==': 'equal', '<>': 'different'}
+                     '<=': 'less_than_equal_to', '==': 'same', '<>': 'distinct'}
 
 
 def translate_expression(expression):
@@ -335,7 +335,7 @@ def translate_equality_expression(ast):
     output_variable, output_string = translate_expression(ast.children[1])
     child_constant0 = ensure_constant(ast.children[0], 'output')
     output_variable0 = get_variable(child_constant0)
-    output_string = write_output(output_string, 'equal(' + output_variable + ',' + output_variable0 + ')', ' & ')
+    output_string = write_output(output_string, 'same(' + output_variable + ',' + output_variable0 + ')', ' & ')
     return output_string, 'value(' + child_constant0 + ',' + output_variable0 + ')'
 
 
@@ -419,15 +419,10 @@ def translate_if_then_else_branch(statement, conditions):
         antecedent = write_output(antecedent, equality_antecedent, ' & ')
     antecedent_dnf = logic.to_dnf(antecedent)
     output_string = ''
-    if antecedent_dnf.op == 'equal':
-        antecedent = lookup_values(logic.constant_symbols(antecedent_dnf))
-        antecedent = write_output(antecedent, ("%s" % antecedent_dnf), ' & ')
+    for arg in logic.disjuncts(antecedent_dnf):
+        antecedent = lookup_values(logic.constant_symbols(arg))
+        antecedent = write_output(antecedent, ("%s" % arg), ' & ')
         output_string += equality_consequent + ' :- ' + antecedent + '\n'
-    else:
-        for arg in logic.disjuncts(antecedent_dnf):
-            antecedent = lookup_values(logic.constant_symbols(arg))
-            antecedent = write_output(antecedent, ("%s" % arg), ' & ')
-            output_string += equality_consequent + ' :- ' + antecedent + '\n'
     return output_string
 
 
@@ -473,8 +468,8 @@ def write_output(output_string, input_string, connective):
 
 def main():
     rule_library = ''
-    input_file = os.path.join('..', 'rules', 'tax_calc.rs')
-    output_file = os.path.join('..', 'rules', 'tax_calc.epilog')
+    input_file = os.path.join('..', 'rules', 'national_insurance.rs')
+    output_file = os.path.join('..', 'rules', 'national_insurance.epilog')
     with open(input_file, 'r') as f:
         input_rules = f.read()
     lexer.input(input_rules)
@@ -482,9 +477,14 @@ def main():
     translation_output = ast2epilog(parse_output)
     rule_library += translation_output
     print(translation_output)
+    global inputs, outputs
     with open(output_file, 'w') as f:
         f.write(translation_output)
-    global inputs, outputs
+        for input_item in inputs:
+            if input_item not in outputs:
+                f.write('input(' + input_item + ')' + '\n')
+        for output in outputs:
+            f.write('output(' + output + ')' + '\n')
     rule_library += translation_output
 #    uig.output_worksheet(inputs, outputs, rule_library)
 

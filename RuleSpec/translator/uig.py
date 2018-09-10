@@ -40,6 +40,7 @@ def write_library (f,rule_library) :
     f.write("subtract(X,Y,Z) :- times(Y,-1,Y1) &amp;  plus(X,Y1,Z)\n")
     f.write("div(X,Y,Z) :- quotient(X,Y,Y1) &amp; floor(Y1,Z)\n")
     f.write("mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  subtract(X,Y2,Z)\n")
+    f.write("less_than(X,Y) :- ~ max(X,Y,X) \n")
     f.write(rule_library)
     f.write(library_footer)
 
