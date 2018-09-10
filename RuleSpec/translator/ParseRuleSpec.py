@@ -327,7 +327,7 @@ def translate_equality_ast(ast):
 
 
 def translate_equality_assignment(ast):
-    child_constant = ensure_constant(ast.children[0], 'output')
+    child_constant = ensure_constant(ast.children[0], 'input')
     return '', 'value(' + child_constant + ',' + ast.children[1] + ')'
 
 
@@ -476,8 +476,8 @@ def write_output(output_string, input_string, connective):
 
 def main():
     rule_library = ''
-    input_file = os.path.join('..', 'rules', 'national_insurance.rs')
-    output_file = os.path.join('..', 'rules', 'national_insurance.epilog')
+    input_file = os.path.join('..', 'rules', 'tax_calc.rs')
+    output_file = os.path.join('..', 'rules', 'tax_calc.epilog')
     with open(input_file, 'r') as f:
         input_rules = f.read()
     lexer.input(input_rules)
