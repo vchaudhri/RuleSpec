@@ -3,6 +3,7 @@ import lex
 import yacc
 import uig
 import os.path
+import logic
 
 reserved = {
             'if':    'IF',
@@ -187,17 +188,26 @@ def print_ast(node):
             print_ast(child)
 
 
-def ensure_constant(name):
+global inputs, outputs, symbol_table
+inputs = []
+outputs = []
+
+
+def ensure_constant(name, mode):
+    global inputs, outputs
     if name[0:1].isupper():
         name = 's' + name
     name = re.sub("\]", ")", name, 1)
     name = re.sub("\[", "(", name, 1)
+    if mode == 'input':
+        if name not in inputs:
+            inputs.append(name)
+    elif mode == 'output':
+        if name not in outputs:
+            outputs.append(name)
+    else:
+        print("Invalid mode supplied to ensure_constant")
     return name
-
-
-global inputs, outputs, symbol_table
-inputs = []
-outputs = []
 
 
 def print_ui():
@@ -215,7 +225,7 @@ def ast2epilog(ast):
             output += '\n\n\n' + ast2epilog(statement)
         return output
     elif ast.type == "if_then_else":
-        return translate_if_then_else(ast, [], [])
+        return translate_if_then_else(ast, [])
     elif ast.type == "equality":
         return translate_equality_ast(ast)
     else:
@@ -241,19 +251,36 @@ def get_variable(constant=None):
         return 'X' + str(var_counter)
 
 
+def lookup_symbol_table(constant):
+    for key, value in symbol_table.items():
+        if symbol_table[key] == constant:
+            return key
+
+
+def lookup_values(constants):
+    global outputs
+    if constants == set():
+        return ''
+    else:
+        output_string = ''
+        for constant in constants:
+            constant_symbol = lookup_symbol_table(str(constant))
+            if constant_symbol and constant_symbol not in outputs:
+                output_string = write_output(output_string, 'value(' + constant_symbol +
+                                             ',' + str(constant) + ')', ' & ')
+        return output_string
+
+
 def get_operand(child):
-    global inputs
     if isinstance(child, Node) and child.type == 'expression':
         operand, output_string = translate_expression(child)
     elif child.isnumeric():
         operand = child
         output_string = ''
     else:
-        child_constant = ensure_constant(child)
-        if child_constant not in inputs:
-            inputs.append(child_constant)
+        child_constant = ensure_constant(child, 'input')
         operand = get_variable(child_constant)
-        output_string = 'value(' + child_constant + ',' + operand + ')'
+        output_string = ''
     return operand, output_string
 
 
@@ -266,12 +293,11 @@ epilog_comparator = {'>': 'greater_than', '<': 'less_than', '>=': 'greater_than_
 
 def translate_expression(expression):
     if isinstance(expression, str):
-        expression_constant = ensure_constant(expression)
-        if expression_constant not in inputs:
-            inputs.append(expression_constant)
-        output_variable = get_variable(expression_constant)
-        output_string = 'value(' + expression_constant + ',' + output_variable + ')'
-        return output_variable, output_string
+        if is_number(expression) or is_string(expression):
+            return expression, ''
+        else:
+            operand, output_string = get_operand(expression)
+            return operand, output_string
     elif expression.leaf is None:
         return translate_expression(expression.children[0])
     else:
@@ -282,7 +308,7 @@ def translate_expression(expression):
         output_string = write_output(output_string1, output_string2, ' & ')
         output_string3 = epilog_operator[operator] + '(' + operand1 + ',' + operand2 + ',' + output_variable + ')'
         output_string = write_output(output_string, output_string3, ' & ')
-    return output_variable, output_string
+        return output_variable, output_string
 
 
 def translate_equality(ast):
@@ -301,47 +327,16 @@ def translate_equality_ast(ast):
 
 
 def translate_equality_assignment(ast):
-    global outputs
-    child_constant = ensure_constant(ast.children[0])
-    if child_constant not in inputs:
-        outputs.append(child_constant)
+    child_constant = ensure_constant(ast.children[0], 'output')
     return '', 'value(' + child_constant + ',' + ast.children[1] + ')'
 
 
 def translate_equality_expression(ast):
-    global outputs
     output_variable, output_string = translate_expression(ast.children[1])
-    child_constant0 = ensure_constant(ast.children[0])
-    if child_constant0 not in outputs:
-        outputs.append(child_constant0)
-    return output_string, 'value(' + child_constant0 + ',' + output_variable + ')'
-
-
-def translate_atomic_formula_1(atomic_formula):
-    global inputs
-    if len(atomic_formula.children) == 1 and not isinstance(atomic_formula.children[0], str):
-        return translate_atomic_formula(atomic_formula.children[0])
-    child_constant0 = ensure_constant(atomic_formula.children[0])
-    if child_constant0 not in inputs:
-        inputs.append(child_constant0)
-    if len(atomic_formula.children) == 1:
-        output_string = 'value(' + child_constant0 + ',' + 'true' + ')'
-        return output_string
-    elif len(atomic_formula.children) == 2:
-        output_string = ''
-        variable0 = get_variable(child_constant0)
-        output_string += 'value(' + child_constant0 + ',' + variable0 + ')'
-        if isinstance(atomic_formula.children[1], str) and not atomic_formula.children[1].isnumeric():
-            child_constant1 = ensure_constant(atomic_formula.children[1])
-            variable1 = get_variable(child_constant1)
-            output_string += ' & ' + 'value(' + child_constant1 + ',' + variable1 + ')'
-            if child_constant1 not in inputs:
-                inputs.append(child_constant1)
-            output_string += ' & ' + epilog_comparator[atomic_formula.leaf] + '(' + variable0 + ',' + variable1 + ')'
-            return output_string
-        else:
-            return output_string + ' & ' + epilog_comparator[atomic_formula.leaf] + '(' + variable0 + ',' + \
-                   ensure_constant(atomic_formula.children[1]) + ')'
+    child_constant0 = ensure_constant(ast.children[0], 'output')
+    output_variable0 = get_variable(child_constant0)
+    output_string = write_output(output_string, 'equal(' + output_variable + ',' + output_variable0 + ')', ' & ')
+    return output_string, 'value(' + child_constant0 + ',' + output_variable0 + ')'
 
 
 def is_string(s):
@@ -360,10 +355,7 @@ def is_number(s):
 
 
 def translate_atomic_formula(atomic_formula):
-    global inputs
-    child_constant0 = ensure_constant(atomic_formula.children[0])
-    if child_constant0 not in inputs:
-        inputs.append(child_constant0)
+    child_constant0 = ensure_constant(atomic_formula.children[0], 'input')
     if len(atomic_formula.children) == 1:
         output_string = 'value(' + child_constant0 + ',' + 'true' + ')'
         return output_string
@@ -371,25 +363,21 @@ def translate_atomic_formula(atomic_formula):
         output_string = ''
         if isinstance(atomic_formula.children[1], str):
             variable0 = get_variable(child_constant0)
-            output_string += 'value(' + child_constant0 + ',' + variable0 + ')'
             if is_number(atomic_formula.children[1]) or is_string(atomic_formula.children[1]):
-                output_string += ' & ' + epilog_comparator[atomic_formula.leaf] + '(' + variable0 + ',' + \
-                       atomic_formula.children[1] + ')'
+                output_string = write_output(output_string, epilog_comparator[atomic_formula.leaf] + '(' + variable0 +
+                                             ',' + atomic_formula.children[1] + ')', ' & ')
                 return output_string
             else:
-                child_constant1 = ensure_constant(atomic_formula.children[1])
+                child_constant1 = ensure_constant(atomic_formula.children[1], 'input')
                 variable1 = get_variable(child_constant1)
-                output_string += ' & ' + 'value(' + child_constant1 + ',' + variable1 + ')'
-                if child_constant1 not in inputs:
-                    inputs.append(child_constant1)
-                output_string += ' & ' + epilog_comparator[atomic_formula.leaf] + \
-                                 '(' + variable0 + ',' + variable1 + ')'
+                output_string = write_output(output_string, epilog_comparator[atomic_formula.leaf] +
+                                             '(' + variable0 + ',' + variable1 + ')', ' & ')
                 return output_string
 
 
 def translate_literal(literal):
     if literal.leaf == 'not':
-        return 'not ' + translate_atomic_formula(literal.children[0])
+        return '~' + translate_atomic_formula(literal.children[0])
     else:
         output_string = translate_atomic_formula(literal.children[0])
         return output_string
@@ -415,23 +403,31 @@ def translate_condition(condition):
         return output_string
 
 
-def translate_if_then_else_branch(statement, positive_conditions, negative_conditions):
-    output_string = ''
+def translate_if_then_else_branch(statement, conditions):
     antecedent = ''
-    if positive_conditions:
-        for condition in positive_conditions:
-            antecedent = write_output(antecedent, translate_condition(condition), ' & ')
+    for condition in conditions:
+        polarity = condition[0]
+        translated_condition = ''
+        translated_condition = write_output(translated_condition, translate_condition(condition[1]), ' & ')
+        if polarity == 'positive':
+            translated_condition = '(' + translated_condition + ')'
+        else:
+            translated_condition = ' ~(' + translated_condition + ')'
+        antecedent = write_output(antecedent, translated_condition, ' & ')
     equality_antecedent, equality_consequent = translate_equality(statement)
-    if len(negative_conditions) >= 1:
-        negated_antecedent = ''
-        for condition in negative_conditions:
-            negated_antecedent =  \
-                 write_output(negated_antecedent, 'not (' + translate_condition(condition) + ')', ' & ')
-        antecedent = write_output(negated_antecedent, antecedent, ' & ')
-    output_string += equality_consequent + ' :- ' + antecedent
     if equality_antecedent:
-        output_string += ' & ' + equality_antecedent
-    output_string += ' \n'
+        antecedent = write_output(antecedent, equality_antecedent, ' & ')
+    antecedent_dnf = logic.to_dnf(antecedent)
+    output_string = ''
+    if antecedent_dnf.op == 'equal':
+        antecedent = lookup_values(logic.constant_symbols(antecedent_dnf))
+        antecedent = write_output(antecedent, ("%s" % antecedent_dnf), ' & ')
+        output_string += equality_consequent + ' :- ' + antecedent + '\n'
+    else:
+        for arg in logic.disjuncts(antecedent_dnf):
+            antecedent = lookup_values(logic.constant_symbols(arg))
+            antecedent = write_output(antecedent, ("%s" % arg), ' & ')
+            output_string += equality_consequent + ' :- ' + antecedent + '\n'
     return output_string
 
 
@@ -447,27 +443,23 @@ def flatten_statements(statements):
     return statement_tree
 
 
-def translate_if_then_else(ast, positive_conditions, negative_conditions):
+def translate_if_then_else(ast, conditions):
     output_string = ''
-    positive_conditions.append(ast.children[0])
+    conditions.append(['positive', ast.children[0]])
     for statement in flatten_statements(ast.children[1]):
         if statement.type == "if_then_else":
-            sub_output_string = translate_if_then_else(statement, positive_conditions, negative_conditions)
-            output_string += sub_output_string
+            output_string += translate_if_then_else(statement, conditions)
         else:
-            sub_output_string = translate_if_then_else_branch(statement, positive_conditions, negative_conditions)
-            output_string += sub_output_string
-    positive_conditions.remove(ast.children[0])
+            output_string += translate_if_then_else_branch(statement, conditions)
+    conditions.pop()
     if len(ast.children) > 2:
-        negative_conditions.append(ast.children[0])
+        conditions.append(['negative', ast.children[0]])
         for statement in flatten_statements(ast.children[2]):
             if statement.type == "if_then_else":
-                sub_output_string = translate_if_then_else(statement, positive_conditions, negative_conditions)
-                output_string += sub_output_string
+                output_string += translate_if_then_else(statement, conditions)
             else:
-                sub_output_string = \
-                    translate_if_then_else_branch(statement, positive_conditions, negative_conditions)
-                output_string += sub_output_string
+                output_string += \
+                    translate_if_then_else_branch(statement, conditions)
     return output_string
 
 
@@ -481,7 +473,8 @@ def write_output(output_string, input_string, connective):
 
 def main():
     rule_library = ''
-    input_file = os.path.join('..', 'rules', 'national_insurance.rs')
+    input_file = os.path.join('..', 'rules', 'tax_calc.rs')
+    output_file = os.path.join('..', 'rules', 'tax_calc.epilog')
     with open(input_file, 'r') as f:
         input_rules = f.read()
     lexer.input(input_rules)
@@ -489,9 +482,11 @@ def main():
     translation_output = ast2epilog(parse_output)
     rule_library += translation_output
     print(translation_output)
+    with open(output_file, 'w') as f:
+        f.write(translation_output)
     global inputs, outputs
     rule_library += translation_output
-    uig.output_worksheet(inputs, outputs, rule_library)
+#    uig.output_worksheet(inputs, outputs, rule_library)
 
 
 if __name__ == "__main__":
