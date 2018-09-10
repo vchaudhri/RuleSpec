@@ -352,7 +352,6 @@ def to_dnf(s):
     return distribute_or_over_and(s)
 
 
-
 def eliminate_implications(s):
     """Change implications into equivalent form with only &, |, and ~ as logical operators."""
     s = expr(s)

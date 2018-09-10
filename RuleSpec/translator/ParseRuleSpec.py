@@ -42,7 +42,7 @@ def t_NUMBER(t):
 
 
 def t_STRING(t):
-    """\'[A-Za-z0-9][A-Za-z0-9_]*\'"""
+    """\"[A-Za-z0-9][A-Za-z0-9_]*\""""
     return t
 
 
@@ -340,7 +340,7 @@ def translate_equality_expression(ast):
 
 
 def is_string(s):
-    if isinstance(s, str) and s[0] == '\'' and s[len(s) - 1] == '\'':
+    if isinstance(s, str) and s[0] == '\"' and s[len(s) - 1] == '\"':
         return True
     else:
         return False
@@ -403,6 +403,14 @@ def translate_condition(condition):
         return output_string
 
 
+def r2l(string):
+    return re.sub("\"", 'xxx', string)
+
+
+def l2r(string):
+    return re.sub("xxx", '\"', string)
+
+
 def translate_if_then_else_branch(statement, conditions):
     antecedent = ''
     for condition in conditions:
@@ -417,11 +425,11 @@ def translate_if_then_else_branch(statement, conditions):
     equality_antecedent, equality_consequent = translate_equality(statement)
     if equality_antecedent:
         antecedent = write_output(antecedent, equality_antecedent, ' & ')
-    antecedent_dnf = logic.to_dnf(antecedent)
+    antecedent_dnf = logic.to_dnf(r2l(antecedent))
     output_string = ''
     for arg in logic.disjuncts(antecedent_dnf):
         antecedent = lookup_values(logic.constant_symbols(arg))
-        antecedent = write_output(antecedent, ("%s" % arg), ' & ')
+        antecedent = l2r(write_output(antecedent, ("%s" % arg), ' & '))
         output_string += equality_consequent + ' :- ' + antecedent + '\n'
     return output_string
 

@@ -57,7 +57,7 @@ endif
 
 if ( suffix_code) then
    U[n] = P[n]  - n * a1
-else if ( prefix_code == 'k') or (prefix_code == 'SK') then
+else if ( prefix_code == "k") or (prefix_code == "SK") then
     U[n] = P[n] + n * a1
     endif
  endif
@@ -74,7 +74,7 @@ endif
 
 T[n] = U[n]
 
-if (cumulative_suffix_code) or (cumulative_prefix_code == 'S') or (prefix_code == 'SK') then
+if (cumulative_suffix_code) or (cumulative_prefix_code == "S") or (prefix_code == "SK") then
    if (U[n]  < C[1]) then
        L[n] = k[0] + (T[n]  - c[0]) * R[1]
    else if (U[n]  < C[2]) then
@@ -88,23 +88,23 @@ endif
 endif
 endif
 
-if  (cumulative_code == 'BR') or (cumulative_code == 'SBR') then
+if  (cumulative_code == "BR") or (cumulative_code == "SBR") then
    L[n] = T[n] * R2
 endif
 
-if (cumulative_prefix_code == 'D0') then
+if (cumulative_prefix_code == "D0") then
    L[n] = T[n] * R3
 endif
 
-if (cumulative_prefix_code == 'D1') then
+if (cumulative_prefix_code == "D1") then
    L[n] = T[n] * R4
 endif
 
-if ( cumulative_code == 'NT') then
+if ( cumulative_code == "NT") then
    L[n] = 0
 endif
 
-if (cumulative_code == 'NT') then  L[n] = 0 endif
+if (cumulative_code == "NT") then  L[n] = 0 endif
 
 #L[n] = round_down(L[n], p)
 
@@ -125,10 +125,10 @@ endif
 
 # Week 1 Basis computation
 
-if (week1_basis) and (((prefix_code == 'k') or (prefix_code == 'SK')) or (suffix_code)) then
+if (week1_basis) and (((prefix_code == "k") or (prefix_code == "SK")) or (suffix_code)) then
    if ( suffix_code) then
       U[n] = p[n] -  a1
-   else if ((prefix_code == 'k') or (prefix_code == 'SK')) then
+   else if ((prefix_code == "k") or (prefix_code == "SK")) then
       Un =  p[n] +  a1
       	endif
    endif
