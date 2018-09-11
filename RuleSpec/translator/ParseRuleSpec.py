@@ -487,12 +487,17 @@ def main():
     print(translation_output)
     global inputs, outputs
     with open(output_file, 'w') as f:
+        f.write("subtract(X,Y,Z) :- times(Y,-1,Y1) &amp;  plus(X,Y1,Z)\n")
+        f.write("div(X,Y,Z) :- quotient(X,Y,Y1) &amp; floor(Y1,Z)\n")
+        f.write("mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  subtract(X,Y2,Z)\n")
+        f.write("less_than(X,Y) :- ~ max(X,Y,X) \n")
         f.write(translation_output)
         for input_item in inputs:
             if input_item not in outputs:
                 f.write('input(' + input_item + ')' + '\n')
         for output in outputs:
             f.write('output(' + output + ')' + '\n')
+
     rule_library += translation_output
 #    uig.output_worksheet(inputs, outputs, rule_library)
 
