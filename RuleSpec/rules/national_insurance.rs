@@ -68,7 +68,7 @@ if (employment_status == "employee") and (R1 <> "undefined") then
 endif
 
 ### fisherman
-if (employement_status == "self_employed") and (employment_title == "Fisherman")  then
+if (employment_status == "self_employed") and (employment_title == "Fisherman")  then
     WR1 = 3.5
 endif
 
