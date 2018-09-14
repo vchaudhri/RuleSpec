@@ -284,7 +284,7 @@ def get_operand(child):
     return operand, output_string
 
 
-epilog_operator = {'+': 'plus', '-': 'subtract', '*': 'times', '/': 'quotient', 'mod': 'mod', 'div': 'div'}
+epilog_operator = {'+': 'plus', '-': 'minus', '*': 'times', '/': 'quotient', 'mod': 'mod', 'div': 'div'}
 
 
 epilog_comparator = {'>': 'greater_than', '<': 'less_than', '>=': 'greater_than_equal_to',
@@ -487,9 +487,9 @@ def main():
     print(translation_output)
     global inputs, outputs
     with open(output_file, 'w') as f:
-        f.write("subtract(X,Y,Z) :- times(Y,-1,Y1) &amp;  plus(X,Y1,Z)\n")
+        f.write("minus(X,Y,Z) :- times(Y,-1,Y1) &amp;  plus(X,Y1,Z)\n")
         f.write("div(X,Y,Z) :- quotient(X,Y,Y1) &amp; floor(Y1,Z)\n")
-        f.write("mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  subtract(X,Y2,Z)\n")
+        f.write("mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  minus(X,Y2,Z)\n")
         f.write("less_than(X,Y) :- ~ max(X,Y,X) \n")
         f.write("greater_than(X,Y) :- ~ min(X,Y,X) \n")
         f.write(translation_output)
