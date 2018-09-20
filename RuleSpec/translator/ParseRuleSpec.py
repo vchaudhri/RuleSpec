@@ -222,7 +222,7 @@ def ast2epilog(ast):
     if ast.type == "statements":
         output = ''
         for statement in ast.children:
-            output += '\n\n\n' + ast2epilog(statement)
+            output += '\n' + ast2epilog(statement)
         return output
     elif ast.type == "if_then_else":
         return translate_if_then_else(ast, [])
@@ -265,30 +265,30 @@ def lookup_values(constants):
         output_string = ''
         for constant in constants:
             constant_symbol = lookup_symbol_table(str(constant))
-            if constant_symbol and constant_symbol not in outputs:
-                output_string = write_output(output_string, 'value(' + constant_symbol +
-                                             ',' + str(constant) + ')', ' & ')
+            if constant_symbol :
+                output_string = write_output(output_string, constant_symbol +
+                                             '(' + str(constant) + ')', ' & ')
         return output_string
 
 
 def get_operand(child):
     if isinstance(child, Node) and child.type == 'expression':
         operand, output_string = translate_expression(child)
-    elif child.isnumeric():
+    elif is_number(child):
         operand = child
         output_string = ''
     else:
         child_constant = ensure_constant(child, 'input')
         operand = get_variable(child_constant)
-        output_string = ''
+        output_string = child_constant + '(' + operand + ')'
     return operand, output_string
 
 
 epilog_operator = {'+': 'plus', '-': 'subtract', '*': 'times', '/': 'quotient', 'mod': 'mod', 'div': 'div'}
 
 
-epilog_comparator = {'>': 'greater_than', '<': 'less_than', '>=': 'greater_than_equal_to',
-                     '<=': 'less_than_equal_to', '==': 'same', '<>': 'distinct'}
+epilog_comparator = {'>': 'greater_than', '<': 'less_than', '>=': 'greater_than',
+                     '<=': 'less_than', '==': 'same', '<>': 'distinct'}
 
 
 def translate_expression(expression):
@@ -327,16 +327,14 @@ def translate_equality_ast(ast):
 
 
 def translate_equality_assignment(ast):
-    child_constant = ensure_constant(ast.children[0], 'input')
-    return '', 'value(' + child_constant + ',' + ast.children[1] + ')'
+    child_constant = ensure_constant(ast.children[0], 'output')
+    return '', child_constant + '(' + ast.children[1] + ')'
 
 
 def translate_equality_expression(ast):
     output_variable, output_string = translate_expression(ast.children[1])
     child_constant0 = ensure_constant(ast.children[0], 'output')
-    output_variable0 = get_variable(child_constant0)
-    output_string = write_output(output_string, 'same(' + output_variable + ',' + output_variable0 + ')', ' & ')
-    return output_string, 'value(' + child_constant0 + ',' + output_variable0 + ')'
+    return output_string, child_constant0 + '(' + output_variable + ')'
 
 
 def is_string(s):
@@ -364,8 +362,14 @@ def translate_atomic_formula(atomic_formula):
         if isinstance(atomic_formula.children[1], str):
             variable0 = get_variable(child_constant0)
             if is_number(atomic_formula.children[1]) or is_string(atomic_formula.children[1]):
-                output_string = write_output(output_string, epilog_comparator[atomic_formula.leaf] + '(' + variable0 +
-                                             ',' + atomic_formula.children[1] + ')', ' & ')
+                if epilog_comparator[atomic_formula.leaf] == 'same':
+                    output_string = write_output(output_string, child_constant0 +
+                                                 '(' + atomic_formula.children[1] + ')', ' & ')
+                else:
+                    if variable0 not in output_string:
+                        output_string = write_output(output_string, child_constant0 + '(' + variable0 + ')', ' & ')
+                    output_string = write_output(output_string, epilog_comparator[atomic_formula.leaf] + '(' +
+                                                 variable0 + ',' + atomic_formula.children[1] + ')', ' & ')
                 return output_string
             else:
                 child_constant1 = ensure_constant(atomic_formula.children[1], 'input')
@@ -404,11 +408,22 @@ def translate_condition(condition):
 
 
 def r2l(string):
-    return re.sub("\"", 'xxx', string)
+    return re.sub("\"", 'qqq', string)
 
 
 def l2r(string):
-    return re.sub("xxx", '\"', string)
+    return re.sub("qqq", '\"', string)
+
+
+def negate_condition(condition):
+    variables = list(set(re.findall('X\d{1,}', condition)))
+    if not variables:
+        if len(re.findall('&|\|', condition)) == 0:
+            return '~' + condition
+        else:
+            return '~' + '(' + condition + ')'
+    variables = re.sub('\'', '', str(variables))
+    return 'countofall(' + variables + ',' + condition + ',0)'
 
 
 def translate_if_then_else_branch(statement, conditions):
@@ -417,10 +432,12 @@ def translate_if_then_else_branch(statement, conditions):
         polarity = condition[0]
         translated_condition = ''
         translated_condition = write_output(translated_condition, translate_condition(condition[1]), ' & ')
+        condition_length = len(re.findall('&|\|', translated_condition))
         if polarity == 'positive':
-            translated_condition = '(' + translated_condition + ')'
+            if condition_length >= 1:
+                translated_condition = '(' + translated_condition + ')'
         else:
-            translated_condition = ' ~(' + translated_condition + ')'
+                translated_condition = negate_condition(translated_condition)
         antecedent = write_output(antecedent, translated_condition, ' & ')
     equality_antecedent, equality_consequent = translate_equality(statement)
     if equality_antecedent:
@@ -428,9 +445,7 @@ def translate_if_then_else_branch(statement, conditions):
     antecedent_dnf = logic.to_dnf(r2l(antecedent))
     output_string = ''
     for arg in logic.disjuncts(antecedent_dnf):
-        antecedent = lookup_values(logic.constant_symbols(arg))
-        antecedent = l2r(write_output(antecedent, ("%s" % arg), ' & '))
-        output_string += equality_consequent + ' :- ' + antecedent + '\n'
+        output_string += equality_consequent + ' :- ' + l2r(("%s" % arg)) + '\n'
     return output_string
 
 
@@ -463,6 +478,7 @@ def translate_if_then_else(ast, conditions):
             else:
                 output_string += \
                     translate_if_then_else_branch(statement, conditions)
+        conditions.pop()
     return output_string
 
 
@@ -476,12 +492,18 @@ def write_output(output_string, input_string, connective):
 
 def main():
     rule_library = ''
-    input_file = os.path.join('..', 'rules', 'tax_calc.rs')
-    output_file = os.path.join('..', 'rules', 'tax_calc.epilog')
+    input_file = os.path.join('..', 'rules', 'national_insurance.rspec')
+    output_file = os.path.join('..', 'rules', 'national_insurance.epilog')
     with open(input_file, 'r') as f:
         input_rules = f.read()
     lexer.input(input_rules)
+    while True:
+        tok = lexer.token()
+        if not tok:
+            break  # No more input
+        print(tok)
     parse_output = parser.parse(input_rules, lexer=lexer)
+    print_ast(parse_output)
     translation_output = ast2epilog(parse_output)
     rule_library += translation_output
     print(translation_output)
@@ -491,15 +513,14 @@ def main():
         f.write("div(X,Y,Z) :- quotient(X,Y,Y1) &amp; floor(Y1,Z)\n")
         f.write("mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  subtract(X,Y2,Z)\n")
         f.write("less_than(X,Y) :- ~ max(X,Y,X) \n")
+        f.write("greater_than(X,Y) :- max(X,Y,X) \n")
         f.write(translation_output)
         for input_item in inputs:
             if input_item not in outputs:
                 f.write('input(' + input_item + ')' + '\n')
         for output in outputs:
             f.write('output(' + output + ')' + '\n')
-
-    rule_library += translation_output
-#    uig.output_worksheet(inputs, outputs, rule_library)
+    uig.output_worksheet(inputs, outputs, rule_library)
 
 
 if __name__ == "__main__":
