@@ -1,0 +1,284 @@
+subtract(X,Y,Z) :- times(Y,-1,Y1) &amp;  plus(X,Y1,Z)
+div(X,Y,Z) :- quotient(X,Y,Y1) &amp; floor(Y1,Z)
+mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  subtract(X,Y2,Z)
+less_than(X,Y) :- ~ max(X,Y,X) 
+
+
+
+value(sC(1),0)
+
+
+
+
+
+value(sC(2),33500)
+
+
+
+
+
+value(sC(3),150000)
+
+
+
+
+
+value(c(0),0)
+
+
+
+
+
+value(c(1),X3) :- quotient(X1,52,X2) & same(X2,X3)
+
+
+
+
+
+value(c(2),X6) :- quotient(X4,52,X5) & same(X5,X6)
+
+
+
+
+
+value(c(3),X9) :- quotient(X7,52,X8) & same(X8,X9)
+
+
+
+
+
+value(sR(1),0.10)
+
+
+
+
+
+value(sR(2),0.20)
+
+
+
+
+
+value(sR(3),0.40)
+
+
+
+
+
+value(sR(4),0.45)
+
+
+
+
+
+value(sM,0.5)
+
+
+
+
+
+value(sK(1),0)
+
+
+
+
+
+value(sK(2),6700)
+
+
+
+
+
+value(sK(3),53300)
+
+
+
+
+
+value(k(0),0)
+
+
+
+
+
+value(sP(n),X13) :- plus(X10,X11,X12) & same(X12,X13)
+
+
+
+
+
+value(a1,0) :- value(code,X14) & same(X14, 0)
+value(a1,X26) :- value(code,X14) & (~same(X14, 0) & quotient(5000, 52, X15) & subtract(X14, 1, X16) & times(X15, X16, X17) & div(X17, 500, X18) & subtract(X14, 1, X19) & mod(X19, 500, X20) & plus(X20, 1, X21) & times(X21, 10, X22) & plus(X22, 9, X23) & quotient(X23, 52, X24) & plus(X18, X24, X25) & same(X25, X26))
+
+
+
+
+
+
+value(sU(n),X32) :- value(n,X28) & (value(suffix_code, true) & times(X28, X29, X30) & subtract(X27, X30, X31) & same(X31, X32))
+value(sU(n),X32) :- value(prefix_code,X33) & value(n,X28) & (same(X33, "k") & ~value(suffix_code, true) & times(X28, X29, X34) & plus(X27, X34, X35) & same(X35, X32))
+value(sU(n),X32) :- value(prefix_code,X33) & value(n,X28) & (same(X33, "SK") & ~value(suffix_code, true) & times(X28, X29, X34) & plus(X27, X34, X35) & same(X35, X32))
+
+
+
+
+
+
+value(sL(n),0) :- (value(suffix_code, true) & less_than_equal_to(X36, 0))
+
+
+
+
+
+
+value(sT(n),X38) :- same(X37,X38)
+
+
+
+
+
+value(sL(n),X50) :- value(sR(1),X47) & value(sC(1),X42) & value(k(0),X43) & value(c(0),X45) & (value(cumulative_suffix_code, true) & less_than(X41, X42) & subtract(X44, X45, X46) & times(X46, X47, X48) & plus(X43, X48, X49) & same(X49, X50))
+value(sL(n),X50) :- value(sR(1),X47) & value(sC(1),X42) & value(k(0),X43) & value(c(0),X45) & value(cumulative_prefix_code,X39) & (same(X39, "S") & less_than(X41, X42) & subtract(X44, X45, X46) & times(X46, X47, X48) & plus(X43, X48, X49) & same(X49, X50))
+value(sL(n),X50) :- value(sR(1),X47) & value(sC(1),X42) & value(k(0),X43) & value(c(0),X45) & value(prefix_code,X40) & (same(X40, "SK") & less_than(X41, X42) & subtract(X44, X45, X46) & times(X46, X47, X48) & plus(X43, X48, X49) & same(X49, X50))
+value(sL(n),X50) :- value(sC(2),X51) & value(k(1),X52) & value(sC(1),X42) & value(sR(2),X55) & (value(cumulative_suffix_code, true) & ~less_than(X41, X42) & less_than(X41, X51) & subtract(X44, X53, X54) & times(X54, X55, X56) & plus(X52, X56, X57) & same(X57, X50))
+value(sL(n),X50) :- value(sC(2),X51) & value(k(1),X52) & value(sC(1),X42) & value(sR(2),X55) & value(cumulative_prefix_code,X39) & (same(X39, "S") & ~less_than(X41, X42) & less_than(X41, X51) & subtract(X44, X53, X54) & times(X54, X55, X56) & plus(X52, X56, X57) & same(X57, X50))
+value(sL(n),X50) :- value(sC(2),X51) & value(k(1),X52) & value(sC(1),X42) & value(sR(2),X55) & value(prefix_code,X40) & (same(X40, "SK") & ~less_than(X41, X42) & less_than(X41, X51) & subtract(X44, X53, X54) & times(X54, X55, X56) & plus(X52, X56, X57) & same(X57, X50))
+value(sL(n),X50) :- value(sR(3),X62) & value(sC(2),X51) & value(sC(1),X42) & value(sC(3),X58) & value(k(2),X59) & (value(cumulative_suffix_code, true) & ~less_than(X41, X42) & ~less_than(X41, X51) & less_than(X41, X58) & subtract(X44, X60, X61) & times(X61, X62, X63) & plus(X59, X63, X64) & same(X64, X50))
+value(sL(n),X50) :- value(sR(3),X62) & value(sC(2),X51) & value(sC(1),X42) & value(sC(3),X58) & value(k(2),X59) & value(cumulative_prefix_code,X39) & (same(X39, "S") & ~less_than(X41, X42) & ~less_than(X41, X51) & less_than(X41, X58) & subtract(X44, X60, X61) & times(X61, X62, X63) & plus(X59, X63, X64) & same(X64, X50))
+value(sL(n),X50) :- value(sR(3),X62) & value(sC(2),X51) & value(sC(1),X42) & value(sC(3),X58) & value(prefix_code,X40) & value(k(2),X59) & (same(X40, "SK") & ~less_than(X41, X42) & ~less_than(X41, X51) & less_than(X41, X58) & subtract(X44, X60, X61) & times(X61, X62, X63) & plus(X59, X63, X64) & same(X64, X50))
+value(sL(n),X50) :- value(sR(4),X68) & value(sC(2),X51) & value(sC(1),X42) & value(sC(3),X58) & value(k(3),X65) & (value(cumulative_suffix_code, true) & ~less_than(X41, X42) & ~less_than(X41, X51) & ~less_than(X41, X58) & subtract(X44, X66, X67) & times(X67, X68, X69) & plus(X65, X69, X70) & same(X70, X50))
+value(sL(n),X50) :- value(sR(4),X68) & value(sC(2),X51) & value(sC(1),X42) & value(sC(3),X58) & value(k(3),X65) & value(cumulative_prefix_code,X39) & (same(X39, "S") & ~less_than(X41, X42) & ~less_than(X41, X51) & ~less_than(X41, X58) & subtract(X44, X66, X67) & times(X67, X68, X69) & plus(X65, X69, X70) & same(X70, X50))
+value(sL(n),X50) :- value(sR(4),X68) & value(sC(2),X51) & value(sC(1),X42) & value(sC(3),X58) & value(k(3),X65) & value(prefix_code,X40) & (same(X40, "SK") & ~less_than(X41, X42) & ~less_than(X41, X51) & ~less_than(X41, X58) & subtract(X44, X66, X67) & times(X67, X68, X69) & plus(X65, X69, X70) & same(X70, X50))
+
+
+
+
+
+
+value(sL(n),X75) :- value(cumulative_code,X71) & value(sR2,X73) & (same(X71, "BR") & times(X72, X73, X74) & same(X74, X75))
+value(sL(n),X75) :- value(cumulative_code,X71) & value(sR2,X73) & (same(X71, "SBR") & times(X72, X73, X74) & same(X74, X75))
+
+
+
+
+
+
+value(sL(n),X80) :- value(cumulative_prefix_code,X76) & value(sR3,X78) & (same(X76, "D0") & times(X77, X78, X79) & same(X79, X80))
+
+
+
+
+
+
+value(sL(n),X85) :- value(sR4,X83) & value(cumulative_prefix_code,X81) & (same(X81, "D1") & times(X82, X83, X84) & same(X84, X85))
+
+
+
+
+
+
+value(sL(n),0) :- value(cumulative_code,X86) & same(X86, "NT")
+
+
+
+
+
+
+value(sL(n),0) :- value(cumulative_code,X87) & same(X87, "NT")
+
+
+
+
+
+
+value(sI(n),X93) :- value(sM,X89) & value(sL(nm1),X91) & (greater_than(X88, 0) & less_than(X88, X89) & subtract(X88, X91, X92) & same(X92, X93))
+value(sI(n),X93) :- value(n,X90) & value(sL(nm1),X91) & (less_than(X88, 0) & greater_than(X90, 1) & subtract(X88, X91, X92) & same(X92, X93))
+value(sI(n),0) :- value(n,X90) & (~less_than(X88, 0) & ~greater_than(X88, 0) & less_than(X88, 0) & same(X90, 1))
+value(sI(n),0) :- value(n,X90) & (~greater_than(X90, 1) & ~greater_than(X88, 0) & less_than(X88, 0) & same(X90, 1))
+value(sI(n),0) :- value(n,X90) & value(sM,X89) & (~less_than(X88, 0) & ~less_than(X88, X89) & less_than(X88, 0) & same(X90, 1))
+value(sI(n),0) :- value(n,X90) & value(sM,X89) & (~greater_than(X90, 1) & ~less_than(X88, X89) & less_than(X88, 0) & same(X90, 1))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(sM,X89) & (~less_than(X88, 0) & ~less_than(X88, 0) & ~greater_than(X88, 0) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(n,X90) & value(sM,X89) & (~same(X90, 1) & ~less_than(X88, 0) & ~greater_than(X88, 0) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(n,X90) & value(sM,X89) & (~less_than(X88, 0) & ~greater_than(X90, 1) & ~greater_than(X88, 0) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(n,X90) & value(sM,X89) & (~same(X90, 1) & ~greater_than(X90, 1) & ~greater_than(X88, 0) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(sM,X89) & (~less_than(X88, 0) & ~less_than(X88, 0) & ~less_than(X88, X89) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(n,X90) & value(sM,X89) & (~same(X90, 1) & ~less_than(X88, 0) & ~less_than(X88, X89) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(n,X90) & value(sM,X89) & (~less_than(X88, 0) & ~greater_than(X90, 1) & ~less_than(X88, X89) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sI(n),X93) :- value(pbik(n),X95) & value(p(n),X94) & value(n,X90) & value(sM,X89) & (~same(X90, 1) & ~greater_than(X90, 1) & ~less_than(X88, X89) & subtract(X94, X95, X96) & times(X89, X96, X97) & same(X97, X93))
+value(sL(n),X88) :- value(sL(nm1),X91) & (~less_than(X88, 0) & ~less_than(X88, 0) & ~greater_than(X88, 0) & plus(X91, X93, X98) & same(X98, X88))
+value(sL(n),X88) :- value(n,X90) & value(sL(nm1),X91) & (~same(X90, 1) & ~less_than(X88, 0) & ~greater_than(X88, 0) & plus(X91, X93, X98) & same(X98, X88))
+value(sL(n),X88) :- value(n,X90) & value(sL(nm1),X91) & (~less_than(X88, 0) & ~greater_than(X90, 1) & ~greater_than(X88, 0) & plus(X91, X93, X98) & same(X98, X88))
+value(sL(n),X88) :- value(n,X90) & value(sL(nm1),X91) & (~same(X90, 1) & ~greater_than(X90, 1) & ~greater_than(X88, 0) & plus(X91, X93, X98) & same(X98, X88))
+value(sL(n),X88) :- value(sM,X89) & value(sL(nm1),X91) & (~less_than(X88, 0) & ~less_than(X88, 0) & ~less_than(X88, X89) & plus(X91, X93, X98) & same(X98, X88))
+value(sL(n),X88) :- value(n,X90) & value(sM,X89) & value(sL(nm1),X91) & (~same(X90, 1) & ~less_than(X88, 0) & ~less_than(X88, X89) & plus(X91, X93, X98) & same(X98, X88))
+value(sL(n),X88) :- value(n,X90) & value(sM,X89) & value(sL(nm1),X91) & (~less_than(X88, 0) & ~greater_than(X90, 1) & ~less_than(X88, X89) & plus(X91, X93, X98) & same(X98, X88))
+value(sL(n),X88) :- value(n,X90) & value(sM,X89) & value(sL(nm1),X91) & (~same(X90, 1) & ~greater_than(X90, 1) & ~less_than(X88, X89) & plus(X91, X93, X98) & same(X98, X88))
+
+
+
+
+
+
+value(sU(n),X103) :- value(p(n),X100) & value(prefix_code,X99) & (value(week1_basis, true) & same(X99, "k") & value(suffix_code, true) & subtract(X100, X101, X102) & same(X102, X103))
+value(sU(n),X103) :- value(p(n),X100) & value(prefix_code,X99) & (same(X99, "SK") & value(suffix_code, true) & subtract(X100, X101, X102) & same(X102, X103))
+value(sU(n),X103) :- value(p(n),X100) & (value(suffix_code, true) & value(suffix_code, true) & subtract(X100, X101, X102) & same(X102, X103))
+value(sUn,X105) :- value(p(n),X100) & value(prefix_code,X99) & (same(X99, "k") & value(week1_basis, true) & same(X99, "k") & ~value(suffix_code, true) & plus(X100, X101, X104) & same(X104, X105))
+value(sUn,X105) :- value(p(n),X100) & value(prefix_code,X99) & (same(X99, "SK") & value(week1_basis, true) & same(X99, "k") & ~value(suffix_code, true) & plus(X100, X101, X104) & same(X104, X105))
+value(sUn,X105) :- value(p(n),X100) & value(prefix_code,X99) & (same(X99, "k") & same(X99, "SK") & ~value(suffix_code, true) & plus(X100, X101, X104) & same(X104, X105))
+value(sUn,X105) :- value(p(n),X100) & value(prefix_code,X99) & (same(X99, "SK") & same(X99, "SK") & ~value(suffix_code, true) & plus(X100, X101, X104) & same(X104, X105))
+value(sUn,X105) :- value(p(n),X100) & value(prefix_code,X99) & (same(X99, "k") & value(suffix_code, true) & ~value(suffix_code, true) & plus(X100, X101, X104) & same(X104, X105))
+value(sUn,X105) :- value(p(n),X100) & value(prefix_code,X99) & (same(X99, "SK") & value(suffix_code, true) & ~value(suffix_code, true) & plus(X100, X101, X104) & same(X104, X105))
+
+
+
+
+
+
+value(sI(n),X108) :- value(sM,X107) & (value(week1_basis, true) & greater_than(X106, 0) & less_than(X106, X107) & same(X106, X108))
+value(sI(n),0) :- (~greater_than(X106, 0) & value(week1_basis, true) & less_than(X106, 0))
+value(sI(n),0) :- value(sM,X107) & (~less_than(X106, X107) & value(week1_basis, true) & less_than(X106, 0))
+value(sI(n),X108) :- value(sM,X107) & value(p(n),X109) & value(pbik(n),X110) & (~greater_than(X106, 0) & value(week1_basis, true) & ~less_than(X106, 0) & subtract(X109, X110, X111) & times(X107, X111, X112) & same(X112, X108))
+value(sI(n),X108) :- value(sM,X107) & value(p(n),X109) & value(pbik(n),X110) & (~less_than(X106, X107) & value(week1_basis, true) & ~less_than(X106, 0) & subtract(X109, X110, X111) & times(X107, X111, X112) & same(X112, X108))
+value(sL(n),X106) :- (~greater_than(X106, 0) & value(week1_basis, true) & ~less_than(X106, 0) & same(X108, X106))
+value(sL(n),X106) :- value(sM,X107) & (~less_than(X106, X107) & value(week1_basis, true) & ~less_than(X106, 0) & same(X108, X106))
+input(sC(1))
+input(sC(2))
+input(sC(3))
+input(c(0))
+input(sR(1))
+input(sR(2))
+input(sR(3))
+input(sR(4))
+input(sM)
+input(sK(1))
+input(sK(2))
+input(sK(3))
+input(k(0))
+input(sP(nm1))
+input(p(n))
+input(code)
+input(suffix_code)
+input(n)
+input(prefix_code)
+input(cumulative_suffix_code)
+input(cumulative_prefix_code)
+input(k(1))
+input(k(2))
+input(k(3))
+input(cumulative_code)
+input(sR2)
+input(sR3)
+input(sR4)
+input(sL(nm1))
+input(pbik(n))
+input(week1_basis)
+output(c(1))
+output(c(2))
+output(c(3))
+output(sP(n))
+output(a1)
+output(sU(n))
+output(sT(n))
+output(sL(n))
+output(sI(n))
+output(sUn)

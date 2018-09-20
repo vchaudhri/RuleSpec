@@ -1,0 +1,87 @@
+subtract(X,Y,Z) :- times(Y,-1,Y1) &amp;  plus(X,Y1,Z)
+div(X,Y,Z) :- quotient(X,Y,Y1) &amp; floor(Y1,Z)
+mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  subtract(X,Y2,Z)
+less_than(X,Y) :- ~ max(X,Y,X) 
+greater_than(X,Y) :- max(X,Y,X) 
+
+national_insurance_class("class1") :- employment_status("employee")
+
+
+sR1(0) :- (employment_status("employee") & employee_category("a"))
+sR2(0.12) :- (employment_status("employee") & employee_category("a"))
+sR3(0.02) :- (employment_status("employee") & employee_category("a"))
+
+
+sR1(0) :- (employment_status("employee") & employee_category("b"))
+sR2(0.585) :- (employment_status("employee") & employee_category("b"))
+sR3(0.02) :- (employment_status("employee") & employee_category("b"))
+
+
+sR1("undefined") :- (employment_status("employee") & employee_category("c"))
+sR2("undefined") :- (employment_status("employee") & employee_category("c"))
+sR3("undefined") :- (employment_status("employee") & employee_category("c"))
+
+
+sR1(0) :- (employment_status("employee") & employee_category("j"))
+sR2(0.138) :- (employment_status("employee") & employee_category("j"))
+sR3(0.02) :- (employment_status("employee") & employee_category("j"))
+
+
+sR1(0) :- (employment_status("employee") & employee_category("h"))
+sR2(0.02) :- (employment_status("employee") & employee_category("h"))
+sR3(0.02) :- (employment_status("employee") & employee_category("h"))
+
+
+sR1(0) :- (employment_status("employee") & employee_category("m"))
+sR2(0.12) :- (employment_status("employee") & employee_category("m"))
+sR3(0.02) :- (employment_status("employee") & employee_category("m"))
+
+
+sR1(0) :- (employment_status("employee") & employee_category("z"))
+sR2(0.02) :- (employment_status("employee") & employee_category("z"))
+sR3(0.02) :- (employment_status("employee") & employee_category("z"))
+
+
+sR1(0) :- (employment_status("employee") & employee_category("x"))
+sR2(0) :- (employment_status("employee") & employee_category("x"))
+sR3(0) :- (employment_status("employee") & employee_category("x"))
+
+
+national_insurance_employee_amt(0) :- (employment_status("employee") & sR1(X19) & distinct(X19, "undefined") & weekly_income(X20) & less_than(X20, 162))
+national_insurance_employee_amt(X23) :- (employment_status("employee") & sR1(X19) & distinct(X19, "undefined") & weekly_income(X20) & greater_than(X20, 162) & weekly_income(X20) & less_than(X20, 892) & weekly_income(X20) & subtract(X20, 162, X21) & sR2(X22) & times(X21, X22, X23))
+national_insurance_employee_amt(X29) :- (employment_status("employee") & sR1(X19) & distinct(X19, "undefined") & weekly_income(X20) & greater_than(X20, 892) & subtract(892, 162, X24) & sR2(X22) & times(X24, X22, X25) & weekly_income(X20) & subtract(X20, 892, X26) & sR3(X27) & times(X26, X27, X28) & plus(X25, X28, X29))
+
+
+sWR1(3.5) :- (employment_status("self_employed") & employment_title("fisherman"))
+national_insurance_employee_amt(X32) :- (employment_status("self_employed") & employment_title("fisherman") & times(3.5, 52, X32))
+
+
+national_insurance_class("class2") :- (employment_status("self_employed") & employment_title("landlord") & annual_profit(X35) & less_than(X35, 5965) & voluntary_contribution_choice("class2"))
+national_insurance_employee_amt(X37) :- (employment_status("self_employed") & employment_title("landlord") & annual_profit(X35) & less_than(X35, 5965) & voluntary_contribution_choice("class2") & times(2.95, 52, X37))
+national_insurance_class("class3") :- (employment_status("self_employed") & employment_title("landlord") & annual_profit(X35) & less_than(X35, 5965) & ~voluntary_contribution_choice("class2") & voluntary_contribution_choice("class3"))
+national_insurance_employee_amt(X38) :- (employment_status("self_employed") & employment_title("landlord") & annual_profit(X35) & less_than(X35, 5965) & ~voluntary_contribution_choice("class2") & voluntary_contribution_choice("class3") & times(14.65, 52, X38))
+national_insurance_class("class2") :- (employment_status("self_employed") & employment_title("landlord") & countofall([X35], (annual_profit(X35) & less_than(X35, 5965)), 0) & annual_profit(X35) & less_than(X35, 8424))
+national_insurance_employee_amt(X39) :- (employment_status("self_employed") & employment_title("landlord") & countofall([X35], (annual_profit(X35) & less_than(X35, 5965)), 0) & annual_profit(X35) & less_than(X35, 8424) & times(2.95, 52, X39))
+national_insurance_class("class4") :- (employment_status("self_employed") & employment_title("landlord") & countofall([X35], (annual_profit(X35) & less_than(X35, 5965)), 0) & countofall([X35], (annual_profit(X35) & less_than(X35, 8424)), 0))
+
+
+national_insurance_employee_amt(0) :- (employment_status("self_employed") & employment_title(X41) & distinct(X41, "landlord") & employment_title(X41) & distinct(X41, "fisherman") & annual_profit(X42) & less_than(X42, 6205))
+national_insurance_class("class2") :- (employment_status("self_employed") & employment_title(X41) & distinct(X41, "landlord") & employment_title(X41) & distinct(X41, "fisherman") & countofall([X42], (annual_profit(X42) & less_than(X42, 6205)), 0) & annual_profit(X42) & less_than(X42, 8424))
+national_insurance_employee_amt(X43) :- (employment_status("self_employed") & employment_title(X41) & distinct(X41, "landlord") & employment_title(X41) & distinct(X41, "fisherman") & countofall([X42], (annual_profit(X42) & less_than(X42, 6205)), 0) & annual_profit(X42) & less_than(X42, 8424) & times(52, 2.95, X43))
+national_insurance_class("class4") :- (employment_status("self_employed") & employment_title(X41) & distinct(X41, "landlord") & employment_title(X41) & distinct(X41, "fisherman") & countofall([X42], (annual_profit(X42) & less_than(X42, 6205)), 0) & countofall([X42], (annual_profit(X42) & less_than(X42, 8424)), 0) & annual_profit(X42) & greater_than(X42, 8424))
+
+
+national_insurance_employee_amt(X47) :- (national_insurance_class("class4") & annual_profit(X45) & less_than(X45, 46350) & annual_profit(X45) & subtract(X45, 8424, X46) & times(X46, 0.09, X47))
+national_insurance_employee_amt(X52) :- (national_insurance_class("class4") & countofall([X45], (annual_profit(X45) & less_than(X45, 46350)), 0) & subtract(46350, 8424, X48) & times(X48, 0.09, X49) & annual_profit(X45) & subtract(X45, 46350, X50) & times(0.02, X50, X51) & plus(X49, X51, X52))
+input(employment_status)
+input(employee_category)
+input(weekly_income)
+input(employment_title)
+input(annual_profit)
+input(voluntary_contribution_choice)
+output(national_insurance_class)
+output(sR1)
+output(sR2)
+output(sR3)
+output(national_insurance_employee_amt)
+output(sWR1)
