@@ -1,0 +1,51 @@
+Model:
+	statements+=Statement*;
+
+Statement:
+	Equality | IfThenElse;
+
+Equality:
+	left=CONSTANT "=" (rightExp=Expression | rightStr=STRING);
+
+IfThenElse:
+	"if" cond=Condition "then" ifStatements+=Statement+ ("else" elseStatements+=Statement+)? "endif";
+
+Expression:
+	Addition;
+
+Addition:
+	Multiplication (('+' | '-') Multiplication)*;
+
+Multiplication:
+	Primary (('*' | '/' | 'div' | 'mod') Primary)*;
+
+Primary:
+	CONSTANT | NUMBER |
+	'(' Addition ')';
+
+Condition: Or;
+
+Or: And ('or' disjuncts+=And)*;
+	
+And: Primary2 ('and' conjuncts+=Primary2)*;
+
+Primary2: lit=Literal | "(" inner=Or ")" ;
+
+Literal:
+	atomicFormula=AtomicFormula | "not" negatedAtomicFormula=AtomicFormula;
+
+AtomicFormula:
+	"(" CONSTANT (("<" | ">" | "<=" | ">=" | "==" | "<>") (NUMBER | STRING | CONSTANT))? ")";
+
+CONSTANT:
+	ID;
+
+@Override
+terminal ID:
+	'^'? ('a'..'z' | 'A'..'Z') ('a'..'z' | 'A'..'Z' | '_' | '0'..'9')* ('[' ('a'..'z' | '0'..'9')* ']')?;
+terminal NUMBER:
+	INT ("." INT)?;
+
+@Override
+terminal SL_COMMENT:
+	'#' !('\n' | '\r')* ('\r'? '\n')?;
