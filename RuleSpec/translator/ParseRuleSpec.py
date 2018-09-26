@@ -257,18 +257,8 @@ def lookup_symbol_table(constant):
             return key
 
 
-def lookup_values(constants):
-    global outputs
-    if constants == set():
-        return ''
-    else:
-        output_string = ''
-        for constant in constants:
-            constant_symbol = lookup_symbol_table(str(constant))
-            if constant_symbol :
-                output_string = write_output(output_string, constant_symbol +
-                                             '(' + str(constant) + ')', ' & ')
-        return output_string
+def lookup_value(constant, constant_value):
+    return constant + '(' + constant_value + ')'
 
 
 def get_operand(child):
@@ -280,7 +270,7 @@ def get_operand(child):
     else:
         child_constant = ensure_constant(child, 'input')
         operand = get_variable(child_constant)
-        output_string = child_constant + '(' + operand + ')'
+        output_string = lookup_value(child_constant, operand)
     return operand, output_string
 
 
@@ -328,13 +318,13 @@ def translate_equality_ast(ast):
 
 def translate_equality_assignment(ast):
     child_constant = ensure_constant(ast.children[0], 'output')
-    return '', child_constant + '(' + ast.children[1] + ')'
+    return '', lookup_value(child_constant, ast.children[1])
 
 
 def translate_equality_expression(ast):
     output_variable, output_string = translate_expression(ast.children[1])
     child_constant0 = ensure_constant(ast.children[0], 'output')
-    return output_string, child_constant0 + '(' + output_variable + ')'
+    return output_string, lookup_value(child_constant0, output_variable)
 
 
 def is_string(s):
@@ -363,17 +353,18 @@ def translate_atomic_formula(atomic_formula):
             variable0 = get_variable(child_constant0)
             if is_number(atomic_formula.children[1]) or is_string(atomic_formula.children[1]):
                 if epilog_comparator[atomic_formula.leaf] == 'same':
-                    output_string = write_output(output_string, child_constant0 +
-                                                 '(' + atomic_formula.children[1] + ')', ' & ')
+                    output_string = \
+                        write_output(output_string, lookup_value(child_constant0, atomic_formula.children[1]), ' & ')
                 else:
                     if variable0 not in output_string:
-                        output_string = write_output(output_string, child_constant0 + '(' + variable0 + ')', ' & ')
+                        output_string = write_output(output_string, lookup_value(child_constant0, variable0), ' & ')
                     output_string = write_output(output_string, epilog_comparator[atomic_formula.leaf] + '(' +
                                                  variable0 + ',' + atomic_formula.children[1] + ')', ' & ')
                 return output_string
             else:
                 child_constant1 = ensure_constant(atomic_formula.children[1], 'input')
                 variable1 = get_variable(child_constant1)
+                output_string = write_output(output_string, lookup_value(child_constant1, variable1), ' & ')
                 output_string = write_output(output_string, epilog_comparator[atomic_formula.leaf] +
                                              '(' + variable0 + ',' + variable1 + ')', ' & ')
                 return output_string
@@ -492,8 +483,8 @@ def write_output(output_string, input_string, connective):
 
 def main():
     rule_library = ''
-    input_file = os.path.join('..', 'rules', 'national_insurance.rspec')
-    output_file = os.path.join('..', 'rules', 'national_insurance.epilog')
+    input_file = os.path.join('..', 'rules', 'tax_calc.rspec')
+    output_file = os.path.join('..', 'rules', 'tax_calc.epilog')
     with open(input_file, 'r') as f:
         input_rules = f.read()
     lexer.input(input_rules)
