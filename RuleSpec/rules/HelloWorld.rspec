@@ -1,0 +1,7 @@
+if (temperature > 20) then
+    spending_money = my_wish * 100
+else if (temperature < 20) then
+    spending_money = your_wish * 100
+endif
+endif
+

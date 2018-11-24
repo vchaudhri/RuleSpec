@@ -483,8 +483,8 @@ def write_output(output_string, input_string, connective):
 
 def main():
     rule_library = ''
-    input_file = os.path.join('..', 'rules', 'tax_calc.rspec')
-    output_file = os.path.join('..', 'rules', 'tax_calc.epilog')
+    input_file = os.path.join('..', 'rules', 'HelloWorld.rspec')
+    output_file = os.path.join('..', 'rules', 'HelloWorld.epilog')
     with open(input_file, 'r') as f:
         input_rules = f.read()
     lexer.input(input_rules)

@@ -1,0 +1,82 @@
+<html> 
+<head> 
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+  <title>UK Payroll Taxes</title> 
+     <meta charset="UTF-8"> 
+     <style class="worksheet"> 
+     [type='widget'] > * 
+     { 
+       min-height: 2px; 
+     } 
+     </style> 
+     <script src="../javascript/epilog.js"></script> 
+     <script src="../javascript/worksheets.js"> </script> 
+   </head> 
+    <body onload="initialize() ; queryOutputs ()" style="width: 100%; overflow: auto;     margin: 0px; box-sizing: border-box;"> 
+<pre id= "lambda" style="display:none;" type="text/hrf"></pre >
+<pre id="library" style="display:none;" type="text/hrf">subtract(X,Y,Z) :- times(Y,-1,Y1) &amp;  plus(X,Y1,Z)
+div(X,Y,Z) :- quotient(X,Y,Y1) &amp; floor(Y1,Z)
+mod(X,Y,Z) :- div(X,Y,Y1) &amp;  times(Y1,Y,Y2) &amp;  subtract(X,Y2,Z)
+less_than(X,Y) :- ~ max(X,Y,X) 
+greater_than(X,Y) :- max (X,Y,X) 
+
+spending_money(X3) :- (temperature(X1) & greater_than(X1, 20) & my_wish(X2) & times(X2, 100, X3))
+spending_money(X5) :- (countofall([X1], (temperature(X1) & greater_than(X1, 20)), 0) & your_wish(X4) & times(X4, 100, X5))
+%%ui scaffolding%% 
+input(temperature)
+input(my_wish)
+input(your_wish)
+output(spending_money)
+select(temperature,X) ==> temperature(X) 
+select(temperature,X) & temperature(Y) ==> ~temperature(Y) 
+value(temperature,X) :- temperature(X) 
+attribute(text(temperature,yoffset,50)) :- input(temperature) 
+insertrow(input_table(temperature,X)) ==> temperature(X) 
+deleterow(input_table(temperature,X)) ==> ~temperature(X) 
+updaterow(input_table(temperature,X), input_table(temperature,Y)) ==> ~temperature(X) & temperature(Y) 
+select(my_wish,X) ==> my_wish(X) 
+select(my_wish,X) & my_wish(Y) ==> ~my_wish(Y) 
+value(my_wish,X) :- my_wish(X) 
+attribute(text(my_wish,yoffset,70)) :- input(my_wish) 
+insertrow(input_table(my_wish,X)) ==> my_wish(X) 
+deleterow(input_table(my_wish,X)) ==> ~my_wish(X) 
+updaterow(input_table(my_wish,X), input_table(my_wish,Y)) ==> ~my_wish(X) & my_wish(Y) 
+select(your_wish,X) ==> your_wish(X) 
+select(your_wish,X) & your_wish(Y) ==> ~your_wish(Y) 
+value(your_wish,X) :- your_wish(X) 
+attribute(text(your_wish,yoffset,90)) :- input(your_wish) 
+insertrow(input_table(your_wish,X)) ==> your_wish(X) 
+deleterow(input_table(your_wish,X)) ==> ~your_wish(X) 
+updaterow(input_table(your_wish,X), input_table(your_wish,Y)) ==> ~your_wish(X) & your_wish(Y) 
+value(spending_money,X) :- spending_money(X) 
+style(X,"display","none") :- input(X) & ~current(X) 
+style(X,"display","") :- input(X) & current(X) 
+style(text(X),"display","none") :- input(X) & ~current(X) 
+style(text(X),"display","") :- input(X) & current(X) 
+attribute(X, xref,Xs) :- input(X) & stringify(text(X), Xs) 
+attribute(X, yref,Xs) :- input(X) & stringify(text(X), Xs) 
+attribute(text(X), xoffset, 100) :- input(X) 
+attribute(X, xoffset, right) :- input(X) 
+attribute(X, yoffset, center) :- input(X) 
+innerhtml(text(X), Str) :- input(X) & stringify(X,Xs) & stringappend(Xs, ": ", Str)
+output_table(X,Y) :- output(X) & value(X,Y) 
+input_table(X,Y) :- input(X) & value(X,Y) 
+attribute(output_table, yoffset, 240) 
+%%end ui scaffolding%% 
+</pre>
+<input type="text" onchange="modtext(this); queryOutputs();" id="temperature" data-x="NaN" data-y="NaN" widget="objectfield" style="border: 1px solid lightgrey; outline: 0px; box-sizing: border-box; margin: 0px; position: absolute; display: none; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;" xoffset="right" yoffset="center" class="" positioned="true" xref="" yref=""> 
+
+<div spellcheck="false" autocomplete="false" id="text(temperature)" data-x="100" data-y="50" widget="div" style="background-color: white; box-sizing: border-box; flex-direction: column; text-align: left; justify-content: flex-start; overflow: auto; margin: 0px; position: absolute; display: none; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;"  xref="" yref="" class="" positioned="true"></div>
+<input type="text" onchange="modtext(this); queryOutputs();" id="my_wish" data-x="NaN" data-y="NaN" widget="objectfield" style="border: 1px solid lightgrey; outline: 0px; box-sizing: border-box; margin: 0px; position: absolute; display: none; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;" xoffset="right" yoffset="center" class="" positioned="true" xref="" yref=""> 
+
+<div spellcheck="false" autocomplete="false" id="text(my_wish)" data-x="100" data-y="50" widget="div" style="background-color: white; box-sizing: border-box; flex-direction: column; text-align: left; justify-content: flex-start; overflow: auto; margin: 0px; position: absolute; display: none; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;"  xref="" yref="" class="" positioned="true"></div>
+<input type="text" onchange="modtext(this); queryOutputs();" id="your_wish" data-x="NaN" data-y="NaN" widget="objectfield" style="border: 1px solid lightgrey; outline: 0px; box-sizing: border-box; margin: 0px; position: absolute; display: none; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;" xoffset="right" yoffset="center" class="" positioned="true" xref="" yref=""> 
+
+<div spellcheck="false" autocomplete="false" id="text(your_wish)" data-x="100" data-y="50" widget="div" style="background-color: white; box-sizing: border-box; flex-direction: column; text-align: left; justify-content: flex-start; overflow: auto; margin: 0px; position: absolute; display: none; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;"  xref="" yref="" class="" positioned="true"></div>
+<table border="1" cellspacing="0" arity="2" class="data-table" id="output_table" editable-row-color="lightblue" header-background="#333" header-color="#EEE" header-alignment="center" widget="table" data-x="35.7735" data-y="324.342375" style="width: 200px; background-color: white; transform: translate(35.7735px, 324.342px); position: absolute; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;" xoffset="50" yoffset="" xref="" yref="" positioned="true"><caption><strong>Output</strong></caption><thead><tr style="font-weight: bold; background-color: rgb(51, 51, 51); color: rgb(238, 238, 238); text-align: center;"><td type="object">Name</td><td type="object">Value</td></tr></thead><tbody></tbody></table> 
+
+<table onclick="queryOutputs();" border="1" cellspacing="0" arity="2" class="data-table" editable="true" id="input_table" editable-row-color="lightblue" header-background="#333" header-color="#EEE" header-alignment="center" widget="table" data-x="335.77349853515625" data-y="324.3423767089844" style="width: 200px; background-color: white; transform: translate(335.773px, 324.342px); position: absolute; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;" xoffset="300" yoffset="0" xref="output_table" yref="output_table" positioned="true"><caption><strong>Inputs</strong></caption><thead><tr style="font-weight: bold; background-color: rgb(51, 51, 51); color: rgb(238, 238, 238); text-align: center;"><td type="object">Name</td><td type="object">Value</td><td></td><td></td></tr></thead><tfoot><tr style="text-align: center; color: rgb(51, 51, 51); background-color: rgb(238, 238, 238); padding-top: 10px;"><td colspan="4"><strong onclick="addtablerow(this.parentNode)" style="cursor: pointer;">&#10010; Add row</strong></td></tr></tfoot><tbody></tbody></table> 
+
+ </body> 
+ </html> 
+ 
