@@ -8,7 +8,7 @@ the individual statments are equations with mathematical formulas.  The language
 of specifying income tax calculations.  The RuleSpec compiler translates the specification into a web-based 
 application with a ruduimentry user interface dialog that elicits the necessary values to perform the computation.
 The computation engine is Stanford's Epilog logic programming engine.  A tiny example is included as HelloWorld.rspec.
-The resulting application is HelloWorld.html
+The resulting application is HelloWorld.html. Its behavior can be seen by loading it into a browser.
 
 8/20/2018
 Completed a basic version of the parser that 
